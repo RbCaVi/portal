@@ -45,6 +45,12 @@ pub enum Matrix {
         k: TVec3,
         pos: TVec3,
     },
+    Exact4 {
+        i: TVec4,
+        j: TVec4,
+        k: TVec4,
+        pos: TVec4,
+    },
     If {
         condition: ParametrizeOrNot,
         then: Option<MatrixId>,
@@ -73,7 +79,7 @@ impl Default for Matrix {
 impl ComboBoxChoosable for Matrix {
     fn variants() -> &'static [&'static str] {
         &[
-            "Simple", "Mul", "Teleport", "Param.", "Exact", "If", "Sqrt", "Lerp", "Camera",
+            "Simple", "Mul", "Teleport", "Param.", "Exact", "Exact4", "If", "Sqrt", "Lerp", "Camera",
         ]
     }
     fn get_number(&self) -> usize {
@@ -84,10 +90,11 @@ impl ComboBoxChoosable for Matrix {
             Teleport { .. } => 2,
             Parametrized { .. } => 3,
             Exact { .. } => 4,
-            If { .. } => 5,
-            Sqrt { .. } => 6,
-            Lerp { .. } => 7,
-            Camera => 8,
+            Exact4 { .. } => 5,
+            If { .. } => 6,
+            Sqrt { .. } => 7,
+            Lerp { .. } => 8,
+            Camera => 9,
         }
     }
     fn set_number(&mut self, number: usize) {
@@ -196,18 +203,44 @@ impl ComboBoxChoosable for Matrix {
                     z: ParametrizeOrNot::No(0.0),
                 },
             },
-            5 => If {
+            5 => Exact4 {
+                i: TVec4 {
+                    x: ParametrizeOrNot::No(1.0),
+                    y: ParametrizeOrNot::No(0.0),
+                    z: ParametrizeOrNot::No(0.0),
+                    w: ParametrizeOrNot::No(0.0),
+                },
+                j: TVec4 {
+                    x: ParametrizeOrNot::No(0.0),
+                    y: ParametrizeOrNot::No(1.0),
+                    z: ParametrizeOrNot::No(0.0),
+                    w: ParametrizeOrNot::No(0.0),
+                },
+                k: TVec4 {
+                    x: ParametrizeOrNot::No(0.0),
+                    y: ParametrizeOrNot::No(0.0),
+                    z: ParametrizeOrNot::No(1.0),
+                    w: ParametrizeOrNot::No(0.0),
+                },
+                pos: TVec4 {
+                    x: ParametrizeOrNot::No(0.0),
+                    y: ParametrizeOrNot::No(0.0),
+                    z: ParametrizeOrNot::No(0.0),
+                    w: ParametrizeOrNot::No(1.0),
+                },
+            },
+            6 => If {
                 condition: ParametrizeOrNot::No(1.0),
                 then: None,
                 otherwise: None,
             },
-            6 => Sqrt(None),
-            7 => Lerp {
+            7 => Sqrt(None),
+            8 => Lerp {
                 t: ParametrizeOrNot::No(1.5),
                 first: None,
                 second: None,
             },
-            8 => Camera,
+            9 => Camera,
             _ => unreachable!(),
         };
     }
@@ -388,6 +421,21 @@ impl StorageElem2 for Matrix {
                 changed.uniform |=
                     pos.egui(ui, egui_f64, uniforms, formulas_cache, data_id.with(0));
             }
+            Exact4 { i, j, k, pos } => {
+                let hpat![uniforms, formulas_cache] = input;
+                ui.label("i: ");
+                changed.uniform |= i.egui(ui, egui_f64, uniforms, formulas_cache, data_id.with(0));
+                ui.separator();
+                ui.label("j: ");
+                changed.uniform |= j.egui(ui, egui_f64, uniforms, formulas_cache, data_id.with(0));
+                ui.separator();
+                ui.label("k: ");
+                changed.uniform |= k.egui(ui, egui_f64, uniforms, formulas_cache, data_id.with(0));
+                ui.separator();
+                ui.label("pos: ");
+                changed.uniform |=
+                    pos.egui(ui, egui_f64, uniforms, formulas_cache, data_id.with(0));
+            }
             If {
                 condition,
                 then,
@@ -518,6 +566,18 @@ impl StorageElem2 for Matrix {
                 ];
                 DMat4::from_cols_array_2d(&matrix)
             }
+            Exact4 { i, j, k, pos } => {
+                macro_rules! get {
+                    ($($x:tt)*) => {$($x)*.get(uniforms, formulas_cache)?};
+                }
+                let matrix = [
+                    [get!(i.x), get!(i.y), get!(i.z), get!(i.w)],
+                    [get!(j.x), get!(j.y), get!(j.z), get!(j.w)],
+                    [get!(k.x), get!(k.y), get!(k.z), get!(k.w)],
+                    [get!(pos.x), get!(pos.y), get!(pos.z), get!(pos.w)],
+                ];
+                DMat4::from_cols_array_2d(&matrix)
+            }
             If {
                 condition,
                 then,
@@ -605,6 +665,13 @@ impl StorageElem2 for Matrix {
                 k.remove_as_field(uniforms, formulas_cache);
                 pos.remove_as_field(uniforms, formulas_cache);
             }
+            Exact4 { i, j, k, pos } => {
+                let hpat![uniforms, formulas_cache] = input;
+                i.remove_as_field(uniforms, formulas_cache);
+                j.remove_as_field(uniforms, formulas_cache);
+                k.remove_as_field(uniforms, formulas_cache);
+                pos.remove_as_field(uniforms, formulas_cache);
+            }
             If {
                 condition,
                 then,
@@ -669,6 +736,12 @@ impl StorageElem2 for Matrix {
                     + scale.errors_count(uniforms, formulas_cache)
             }
             Exact { i, j, k, pos } => {
+                i.errors_count(uniforms, formulas_cache)
+                    + j.errors_count(uniforms, formulas_cache)
+                    + k.errors_count(uniforms, formulas_cache)
+                    + pos.errors_count(uniforms, formulas_cache)
+            }
+            Exact4 { i, j, k, pos } => {
                 i.errors_count(uniforms, formulas_cache)
                     + j.errors_count(uniforms, formulas_cache)
                     + k.errors_count(uniforms, formulas_cache)

@@ -320,6 +320,14 @@ pub struct TVec3 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TVec4 {
+    pub x: ParametrizeOrNot,
+    pub y: ParametrizeOrNot,
+    pub z: ParametrizeOrNot,
+    pub w: ParametrizeOrNot,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ParametrizeOrNot {
     Yes(Option<UniformId>),
     No(f64),
@@ -365,6 +373,54 @@ impl TVec3 {
         self.x.errors_count(uniforms, formulas_cache)
             + self.y.errors_count(uniforms, formulas_cache)
             + self.z.errors_count(uniforms, formulas_cache)
+    }
+}
+
+impl TVec4 {
+    pub fn egui(
+        &mut self,
+        ui: &mut Ui,
+        f: impl Fn(&mut Ui, &mut f64) -> bool,
+        uniforms: &mut Storage2<AnyUniform>,
+        formulas_cache: &mut FormulasCache,
+        data_id: egui::Id,
+    ) -> bool {
+        let mut changed = false;
+        changed |= self
+            .x
+            .egui(ui, "X", 0.0, &f, uniforms, formulas_cache, data_id.with(0));
+        changed |= self
+            .y
+            .egui(ui, "Y", 0.0, &f, uniforms, formulas_cache, data_id.with(1));
+        changed |= self
+            .z
+            .egui(ui, "Z", 0.0, &f, uniforms, formulas_cache, data_id.with(2));
+        changed |= self
+            .w
+            .egui(ui, "W", 0.0, &f, uniforms, formulas_cache, data_id.with(3));
+        changed
+    }
+
+    pub fn remove_as_field(
+        &self,
+        uniforms: &mut Storage2<AnyUniform>,
+        formulas_cache: &mut FormulasCache,
+    ) {
+        self.x.remove_as_field(uniforms, formulas_cache);
+        self.y.remove_as_field(uniforms, formulas_cache);
+        self.z.remove_as_field(uniforms, formulas_cache);
+        self.w.remove_as_field(uniforms, formulas_cache);
+    }
+
+    pub fn errors_count(
+        &self,
+        uniforms: &Storage2<AnyUniform>,
+        formulas_cache: &FormulasCache,
+    ) -> usize {
+        self.x.errors_count(uniforms, formulas_cache)
+            + self.y.errors_count(uniforms, formulas_cache)
+            + self.z.errors_count(uniforms, formulas_cache)
+            + self.w.errors_count(uniforms, formulas_cache)
     }
 }
 
