@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.4.4"
-egui-macroquad = { path = "../../egui-macroquad" } # egui-macroquad 0.16.0
+egui-macroquad = { git = "https://github.com/optozorax/egui-macroquad" }
 glam = { version = "0.13.0", features = ["serde"] }
 serde = "1.0.124"
 ron = "0.6.4"
