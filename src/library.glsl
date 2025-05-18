@@ -73,9 +73,13 @@ vec3 my_refract(vec3 dir, vec3 normal, float refractive_index) {
 
 // Return ray, trat is transformed used matrix. NOTE: Do not forget to normalize new r.d!!! If your `t` depends on it, memorize it somewhere.
 Ray transform(mat4 matrix, Ray r) {
+    vec4 o = matrix * r.o;
+    vec4 od = matrix * (r.o + r.d);
+    o /= o.w;
+    od /= od.w;
     return Ray(
-        matrix * r.o,
-        matrix * r.d
+        o,
+        od - o
     );
 }
 
